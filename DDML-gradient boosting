@@ -1,0 +1,28 @@
+
+
+// Define global macros for dependent variable (Y), independent variables (X), and treatment variable (D)
+global Y y
+
+// Define global macro for the control variables (including factor variable i.id)
+global X x1 x2 x3 i.id
+
+// Define global macro for the treatment (policy) variable
+global D d
+
+// Fix the random seed for reproducibility across runs
+set seed 42
+
+// Initialize ddml with a partially-linear model and 5-fold cross-validation
+ddml init partial, kfolds(5)
+
+// First-stage regression: estimate E[D|X] using gradient-boosting regression
+ddml E[D|X]: pystacked $D $X, type(reg) method(gradboost)
+
+// First-stage regression: estimate E[Y|X] using gradient-boosting regression
+ddml E[Y|X]: pystacked $Y $X, type(reg) method(gradboost)
+
+// Perform cross-fitting to reduce overfitting bias
+ddml crossfit
+
+// Estimate the treatment effect and report robust standard errors
+ddml estimate, robust
